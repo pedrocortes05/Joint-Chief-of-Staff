@@ -1,4 +1,0 @@
-TOKEN = ""
-TESTING_TOKEN = ""
-
-DB = 0
