@@ -55,6 +55,7 @@ client = commands.Bot(command_prefix=get_prefix, intents=intents, case_insensiti
 client.remove_command("help")
 msg_separator = "<=message:author=>"
 prefix_separator = "<=guild:prefix=>"
+defcon_separator = "<=level:category=>"
 task_separator = "<=:=>"
 
 async def reload_guild_dB(text_channel):
@@ -91,6 +92,27 @@ async def get_saved_messages(guild, category):
 	channel = get(dB_guild.channels, name=text_channel)
 	messages = [message.content.split(msg_separator) async for message in channel.history()]
 	return messages
+
+async def save_defcon(guild, category, level):
+	extension = f"-defcon"
+	text_channel = (guild.name + extension).replace(' ', '-').lower()
+	await reload_guild_dB(text_channel)
+
+	channel = get(dB_guild.channels, name=text_channel)
+
+	prev_level = [message async for message in channel.history() if message.content.split(defcon_separator)[1] == category]
+	if bool(prev_level): await prev_level[0].delete()
+
+	await channel.send(level + defcon_separator + category)
+
+async def get_defcon(guild, category):
+	extension = f"-defcon"
+	text_channel = (guild.name + extension).replace(' ', '-').lower()
+	await reload_guild_dB(text_channel)
+
+	channel = get(dB_guild.channels, name=text_channel)
+	level = [message.content.split(defcon_separator)[0] async for message in channel.history() if message.content.split(defcon_separator)[1] == category][0]
+	return level
 
 async def save_timezone(guild, timezone):
 	extension = f"-timezone"
@@ -370,7 +392,7 @@ async def loop_checker():
 
 @client.event
 async def on_member_join(self, member):
-	channel = client.get_channel(847741380402348032)
+	channel = client.get_channel(847741380402348032) #TODO
 	await channel.send(f"{member} has joined the server")
 
 @client.command(aliases=["ch"])
@@ -435,25 +457,31 @@ async def Say(ctx, *, message):
 	await ctx.message.delete()
 	await ctx.send(message)
 
-@client.event
-async def on_guild_join(guild):
-	with open("prefixes.json", 'r') as f:
-		prefixes = json.load(f)
-	
-	prefixes[str(guild.id)] = '!'
+@client.command(aliases=["def"])
+@commands.has_permissions(administrator=True)
+async def Defcon(ctx, level):
+	try:
+		level = int(level)
+	except ValueError:
+		await ctx.send(f"**{level}** is not a valid number")
 
-	with open("prefixes.json", 'w') as f:
-		json.dump(prefixes, f, indent=4)
+	if level == 1:
+		color = discord.Colour.light_grey()
+	elif level == 2:
+		color = discord.Colour.red()
+	elif level == 3:
+		color = discord.Colour.yellow()
+	elif level == 4:
+		color = discord.Colour.green()
+	elif level == 5:
+		color = discord.Colour.blue()
+	else:
+		await ctx.send(f"**{level}** is not a valid number")
+		return
 
-@client.event
-async def on_guild_remove(guild):
-	with open("prefixes.json", 'r') as f:
-		prefixes = json.load(f)
-
-	del prefixes[str(guild.id)]
-
-	with open("prefixes.json", 'w') as f:
-		json.dump(prefixes, f, indent=4)
+	await save_defcon(ctx.guild, str(ctx.channel.category), str(level))
+	embed = discord.Embed(title=f"DEFCON {ctx.channel.category}", description=f"Level set to {level}", color=color)
+	await ctx.send(embed=embed)
 
 @client.command()
 @commands.has_permissions(administrator=True)
