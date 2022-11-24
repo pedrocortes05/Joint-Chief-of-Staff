@@ -384,7 +384,7 @@ async def loop_checker():
 		for task in await get_tasks(guild):
 			message, channel_id, interval, start = task
 			delta = timedelta(seconds=int(float(interval)))
-			delta_now = timedelta(seconds=int((datetime.datetime.now() - datetime.datetime.fromisoformat(start)).total_seconds()))
+			delta_now = timedelta(seconds=int((datetime.datetime.now(datetime.timezone(timedelta(hours=get_timezone(guild)))) - datetime.datetime.fromisoformat(start)).total_seconds()))
 			remaining_seconds = int((math.ceil(delta_now/delta)*delta-delta_now).total_seconds())
 			if remaining_seconds < 60:
 				channel = client.get_channel(int(channel_id))
