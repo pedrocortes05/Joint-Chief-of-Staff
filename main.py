@@ -196,6 +196,7 @@ async def help(ctx):
 							**{prefix}Messages** or **{prefix}msgs**: - View saved messages
 							**{prefix}DMessages** or **{prefix}dmsg**: - Delete a saved message
 							**{prefix}Say** or **{prefix}s**: - Speak as the bot
+							**{prefix}Defcon** or **{prefix}def**: - Set a DEFCON level
 							**{prefix}ChangePrefix**: - Change the bots prefix"""
 
 	embed.add_field(name="\u200b", value=player_commands, inline=False)
@@ -206,7 +207,6 @@ async def help(ctx):
 async def SMessage(ctx):
 	embed = discord.Embed(title="Type the message", color=discord.Colour.blue())
 	embed.set_footer(text='Type "cancel" to stop')
-	await ctx.send("huh")
 	await ctx.send(embed=embed)
 	try:
 		reply_msg = await client.wait_for("message", check=lambda m:m.author==ctx.author and m.channel.id==ctx.channel.id, timeout=60)
@@ -460,9 +460,10 @@ async def Say(ctx, *, message):
 @client.command(aliases=["def"])
 @commands.has_permissions(administrator=True)
 async def Defcon(ctx):
+	categories_list = [category for category in ctx.guild.categories if category.name != "Clan Lobby"]
 	categories = ""
 	temp_num = 0
-	for category in ctx.guild.categories:
+	for category in categories_list:
 		temp_num += 1
 		categories += f"{temp_num}. {category}\n"
 
@@ -483,10 +484,10 @@ async def Defcon(ctx):
 			try:
 				index = int(reply) - 1
 
-				if index < 0 and index >= len(ctx.guild.categories):
+				if index < 0 and index >= len(categories_list):
 					await ctx.send(f"**{reply}** is not a valid number, please try again")
 				else:
-					category = ctx.guild.categories[index]
+					category = categories_list[index]
 					break
 			except ValueError:
 				await ctx.send(f"**{reply}** is not recognized as a valid number, please try again")
@@ -511,7 +512,7 @@ async def Defcon(ctx):
 				level = int(reply)
 				break
 			except ValueError:
-				await ctx.send(f"**{reply}** is not a valid number")
+				await ctx.send(f"**{reply}** is not a valid number, please try again")
 		except asyncio.TimeoutError:
 			await ctx.send("Time's up")
 			return
@@ -531,8 +532,6 @@ async def Defcon(ctx):
 		return
 
 	await save_defcon(ctx.guild, str(ctx.channel.category), str(level))
-	embed = discord.Embed(title=f"DEFCON {ctx.channel.category}", description=f"Level set to {level}", color=color)
-	await ctx.send(embed=embed)
 
 	for channel in category.channels:
 		embed = discord.Embed(title=f"DEFCON {ctx.channel.category}", description=f"Level set to {level}", color=color)
