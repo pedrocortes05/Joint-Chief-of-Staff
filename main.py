@@ -114,7 +114,7 @@ async def get_defcon(guild, category):
 	level = [message.content.split(defcon_separator)[0] async for message in channel.history() if message.content.split(defcon_separator)[1] == category][0]
 	return level
 
-async def save_timezone(guild, timezone):
+async def save_timezone(guild, timezone_index):
 	extension = f"-timezone"
 	text_channel = (guild.name + extension).replace(' ', '-').lower()
 	await reload_guild_dB(text_channel)
@@ -125,7 +125,7 @@ async def save_timezone(guild, timezone):
 		prev_timezone = prev_timezone[0]
 		await prev_timezone.delete()
 
-	await channel.send(timezone)
+	await channel.send(timezone_index)
 
 async def get_timezone(guild):
 	extension = f"-timezone"
@@ -135,11 +135,11 @@ async def get_timezone(guild):
 	channel = get(dB_guild.channels, name=text_channel)
 	messages = [message.content async for message in channel.history()]
 	if bool(messages):
-		timezone = messages[0]
+		timezone_index = messages[0]
 	else:
-		timezone = messages
+		timezone_index = messages
 
-	return timezone
+	return timezone_index - 11
 
 def get_timezones():
 	timezones = ""
