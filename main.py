@@ -459,11 +459,62 @@ async def Say(ctx, *, message):
 
 @client.command(aliases=["def"])
 @commands.has_permissions(administrator=True)
-async def Defcon(ctx, level):
-	try:
-		level = int(level)
-	except ValueError:
-		await ctx.send(f"**{level}** is not a valid number")
+async def Defcon(ctx):
+	categories = ""
+	temp_num = 0
+	for category in ctx.guild.categories:
+		temp_num += 1
+		categories += f"{temp_num}. {category}\n"
+
+	embed = discord.Embed(title="", color=discord.Colour.blue())
+	embed.add_field(name="Enter the number to choose a category", value=categories)
+	embed.set_footer(text='Type "cancel" to stop')
+	await ctx.send(embed=embed)
+
+	while True:
+		try:
+			reply = await client.wait_for("message", check=lambda m:m.author==ctx.author and m.channel.id==ctx.channel.id, timeout=60)
+			reply = reply.content
+			if reply.lower() == "cancel":
+				embed = discord.Embed(title="Cancelled", color=discord.Colour.red())
+				await ctx.send(embed=embed)
+				return
+
+			try:
+				index = int(reply) - 1
+
+				if index < 0 and index >= len(ctx.guild.categories):
+					await ctx.send(f"**{reply}** is not a valid number, please try again")
+				else:
+					category = ctx.guild.categories[index]
+					break
+			except ValueError:
+				await ctx.send(f"**{reply}** is not recognized as a valid number, please try again")
+		except asyncio.TimeoutError:
+			await ctx.send("Time's up")
+			return
+
+	embed = discord.Embed(title="Enter the DEFCON level", color=discord.Colour.blue())
+	embed.set_footer(text='Type "cancel" to stop')
+	await ctx.send(embed=embed)
+
+	while True:
+		try:
+			reply = await client.wait_for("message", check=lambda m:m.author==ctx.author and m.channel.id==ctx.channel.id, timeout=60)
+			reply = reply.content
+			if reply.lower() == "cancel":
+				embed = discord.Embed(title="Cancelled", color=discord.Colour.red())
+				await ctx.send(embed=embed)
+				return
+
+			try:				
+				level = int(reply)
+				break
+			except ValueError:
+				await ctx.send(f"**{reply}** is not a valid number")
+		except asyncio.TimeoutError:
+			await ctx.send("Time's up")
+			return
 
 	if level == 1:
 		color = discord.Colour.light_grey()
@@ -476,12 +527,16 @@ async def Defcon(ctx, level):
 	elif level == 5:
 		color = discord.Colour.blue()
 	else:
-		await ctx.send(f"**{level}** is not a valid number")
+		await ctx.send(f"**{level}** is not a valid level")
 		return
 
 	await save_defcon(ctx.guild, str(ctx.channel.category), str(level))
 	embed = discord.Embed(title=f"DEFCON {ctx.channel.category}", description=f"Level set to {level}", color=color)
 	await ctx.send(embed=embed)
+
+	for channel in category.channels:
+		embed = discord.Embed(title=f"DEFCON {ctx.channel.category}", description=f"Level set to {level}", color=color)
+		await channel.send(embed=embed)
 
 @client.command()
 @commands.has_permissions(administrator=True)
