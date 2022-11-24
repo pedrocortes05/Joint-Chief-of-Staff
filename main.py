@@ -173,6 +173,24 @@ async def get_tasks(guild):
 	tasks = [message.content.split(task_separator) async for message in channel.history()]
 	return tasks
 
+async def save_ticket(guild, num):
+	extension = f"-tickets"
+	text_channel = (guild.name + extension).replace(' ', '-').lower()
+	await reload_guild_dB(text_channel)
+
+	channel = get(dB_guild.channels, name=text_channel)
+	await channel.send(str(num))
+
+async def get_ticket(guild):
+	extension = f"-tickets"
+	text_channel = (guild.name + extension).replace(' ', '-').lower()
+	await reload_guild_dB(text_channel)
+
+	channel = get(dB_guild.channels, name=text_channel)
+	num = [num.content async for num in channel.history()]
+	if not bool(num): num = ['0']
+	return num[0]
+
 
 @client.event
 async def on_ready():
@@ -407,7 +425,11 @@ async def Channel(ctx, *args):
 	for mention in ctx.message.mentions:
 		overwrites[mention] = discord.PermissionOverwrite(read_messages=True)
 
-	await ctx.guild.create_text_channel("cool", overwrites=overwrites) #TODO
+	category = get(ctx.guild.categories, id=1044791719281049731) #Admin category
+	
+	num = int(await get_ticket(ctx.guild)) + 1
+	await save_ticket(ctx.guild, num)
+	await category.create_text_channel(f"private-{num}", overwrites=overwrites)
 
 @client.event
 async def on_reaction_add(reaction, user):
@@ -521,14 +543,24 @@ async def Defcon(ctx):
 
 	if level == 1:
 		color = discord.Colour.light_grey()
+		embed = discord.Embed(title=f"DEFCON {level}", description="COCKED PISTOL", color=color)
+		embed.add_field(name="Maximum readiness. Immediate response", value="Nuclear war is imminent or has already started")
 	elif level == 2:
 		color = discord.Colour.red()
+		embed = discord.Embed(title=f"DEFCON {level}", description="FAST PACE", color=color)
+		embed.add_field(name="Armed forces ready to deploy and engage in less than six hours", value="Next step to nuclear war")
 	elif level == 3:
 		color = discord.Colour.yellow()
+		embed = discord.Embed(title=f"DEFCON {level}", description="ROUND HOUSE", color=color)
+		embed.add_field(name="Air Force ready to mobilize in 15 minutes", value="Increase in force readiness above that required for normal readiness")
 	elif level == 4:
 		color = discord.Colour.green()
+		embed = discord.Embed(title=f"DEFCON {level}", description="DOUBLE TAKE", color=color)
+		embed.add_field(name="Above normal readiness", value="Increased intelligence watch and strengthened security measures")
 	elif level == 5:
 		color = discord.Colour.blue()
+		embed = discord.Embed(title=f"DEFCON {level}", description="FADE OUT", color=color)
+		embed.add_field(name="Normal readiness", value="Lowest state of readiness")
 	else:
 		await ctx.send(f"**{level}** is not a valid level")
 		return
@@ -536,7 +568,6 @@ async def Defcon(ctx):
 	await save_defcon(ctx.guild, str(ctx.channel.category), str(level))
 
 	for channel in category.channels:
-		embed = discord.Embed(title=f"DEFCON {ctx.channel.category}", description=f"Level set to {level}", color=color)
 		await channel.send(embed=embed)
 
 @client.command()
