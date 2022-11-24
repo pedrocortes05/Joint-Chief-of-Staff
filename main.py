@@ -135,11 +135,12 @@ async def get_timezone(guild):
 	channel = get(dB_guild.channels, name=text_channel)
 	messages = [message.content async for message in channel.history()]
 	if bool(messages):
-		timezone_index = messages[0]
+		timezone_index = int(messages[0]) - 11
 	else:
-		timezone_index = messages
+		timezone_index = "False"
 
-	return timezone_index - 11
+	return timezone_index
+
 
 def get_timezones():
 	timezones = ""
@@ -266,7 +267,7 @@ async def SMessage(ctx):
 			return
 
 	#check if have timezone
-	if not bool(await get_timezone(ctx.guild)):
+	if await get_timezone(ctx.guild) == "False":
 		embed = discord.Embed(title="You do not have a timezone set.", color=discord.Colour.blue())
 		embed.add_field(name="Enter the number corresponding to your timezone", value=get_timezones())
 		embed.set_footer(text='Type "cancel" to stop')
@@ -403,7 +404,7 @@ async def loop_checker():
 		for task in await get_tasks(guild):
 			message, channel_id, interval, start = task
 			delta = timedelta(seconds=int(float(interval)))
-			delta_now = timedelta(seconds=int((datetime.datetime.now(datetime.timezone(timedelta(hours=get_timezone(guild)))) - datetime.datetime.fromisoformat(start)).total_seconds()))
+			delta_now = timedelta(seconds=int((datetime.datetime.now(datetime.timezone(timedelta(hours=await get_timezone(guild)))) - datetime.datetime.fromisoformat(start).replace(tzinfo=datetime.timezone.utc)).total_seconds()))
 			remaining_seconds = int((math.ceil(delta_now/delta)*delta-delta_now).total_seconds())
 			if remaining_seconds < 60:
 				channel = client.get_channel(int(channel_id))
