@@ -14,7 +14,7 @@ from pytz import timezone
 
 import tokens
 
-current_token = tokens.TESTING_TOKEN
+current_token = tokens.TOKEN
 DB = tokens.DB
 
 async def save_prefix(guild_id, prefix):
@@ -197,6 +197,7 @@ async def help(ctx):
 							**{prefix}DMessages** or **{prefix}dmsg**: - Delete a saved message
 							**{prefix}Say** or **{prefix}s**: - Speak as the bot
 							**{prefix}Defcon** or **{prefix}def**: - Set a DEFCON level
+							**{prefix}Channel** or **{prefix}ch**: - Create a channel with staff and someone
 							**{prefix}ChangePrefix**: - Change the bots prefix"""
 
 	embed.add_field(name="\u200b", value=player_commands, inline=False)
@@ -392,7 +393,8 @@ async def loop_checker():
 
 @client.event
 async def on_member_join(self, member):
-	channel = client.get_channel(847741380402348032) #TODO
+	# Admin channel
+	channel = client.get_channel(1044791836889321492)
 	await channel.send(f"{member} has joined the server")
 
 @client.command(aliases=["ch"])
@@ -405,7 +407,7 @@ async def Channel(ctx, *args):
 	for mention in ctx.message.mentions:
 		overwrites[mention] = discord.PermissionOverwrite(read_messages=True)
 
-	await ctx.guild.create_text_channel("cool", overwrites=overwrites)
+	await ctx.guild.create_text_channel("cool", overwrites=overwrites) #TODO
 
 @client.event
 async def on_reaction_add(reaction, user):
@@ -547,7 +549,8 @@ async def ChangePrefix(ctx, prefix):
 @Channel.error
 async def ChannelError(ctx, error):
 	if isinstance(error, commands.MissingRequiredArgument):
-		await ctx.send(f"Syntax: **{get_prefix(client, ctx)}Channel <#channel>**")
+		await ctx.send(f"Syntax: **{get_prefix(client, ctx)}Channel <@user>**")
+		await ctx.send("Multiple users can be mentioned")
 	else:
 		print(traceback.format_exc())
 		print(error)
